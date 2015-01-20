@@ -1203,7 +1203,6 @@ class U3(Device):
         return watchdogStatus
     watchdog.section = 2
 
-    SPIModes = { 'A' : 0, 'B' : 1, 'C' : 2, 'D' : 3 }
     def spi(self, SPIBytes, AutoCS=True, DisableDirConfig = False, SPIMode = 'A', SPIClockFactor = 0, CSPINNum = 4, CLKPinNum = 5, MISOPinNum = 6, MOSIPinNum = 7):
         """
         Name: U3.spi(SPIBytes, AutoCS=True, DisableDirConfig = False,
@@ -1223,6 +1222,12 @@ class U3(Device):
         if not isinstance(SPIBytes, list):
             raise LabJackException("SPIBytes MUST be a list of bytes")
         
+        spiModes = ('A', 'B', 'C', 'D')
+        try:
+            spiModeSelect = spiModes.index(SPIMode)
+        except ValueError:
+            raise LabJackException("Invalid SPIMode %r, valid modes are: %r" % (SPIMode, spiModes))
+
         numSPIBytes = len(SPIBytes)
         
         oddPacket = False
@@ -1245,7 +1250,7 @@ class U3(Device):
         if DisableDirConfig:
             command[6] |= (1 << 6)
         
-        command[6] |= ( self.SPIModes[SPIMode] & 3 )
+        command[6] |= (spiModeSelect & 3)
         
         command[7] = SPIClockFactor
         #command[8] = Reserved
