@@ -1204,11 +1204,12 @@ class U3(Device):
         return watchdogStatus
     watchdog.section = 2
 
-    def spi(self, SPIBytes, AutoCS=True, DisableDirConfig = False, SPIMode = 'A', SPIClockFactor = 0, CSPinNum = 4, CLKPinNum = 5, MISOPinNum = 6, MOSIPinNum = 7, CSPINNum = None):
+    def spi(self, SPIBytes, AutoCS = True, InvertCS = False, DisableDirConfig = False, SPIMode = 'A', SPIClockFactor = 0, CSPinNum = 4, CLKPinNum = 5, MISOPinNum = 6, MOSIPinNum = 7, CSPINNum = None):
         """
-        Name: U3.spi(SPIBytes, AutoCS=True, DisableDirConfig = False,
-                     SPIMode = 'A', SPIClockFactor = 0, CSPinNum = 4,
-                     CLKPinNum = 5, MISOPinNum = 6, MOSIPinNum = 7)
+        Name: U3.spi(SPIBytes, AutoCS = True, InvertCS = False,
+                     DisableDirConfig = False, SPIMode = 'A',
+                     SPIClockFactor = 0, CSPinNum = 4, CLKPinNum = 5,
+                     MISOPinNum = 6, MOSIPinNum = 7)
         
         Args: SPIBytes, a list of bytes to be transferred.
               See Section 5.2.15 of the user's guide.
@@ -1216,10 +1217,17 @@ class U3(Device):
         Desc: Sends and receives serial data using SPI synchronous
               communication.
 
-        NOTE: Requires U3 hardware version 1.21 or greater.  Also,
-              the return has been changed to a dictionary with
-              NumSPIBytesTransferred and SPIBytes.  The keyword
-              argument CSPinNum was named CSPINNum in old versions.
+        Returns a Dictionary:
+        {
+            'NumSPIBytesTransferred': 4,  # number of bytes sent/received
+            'SPIBytes': [0, 0, 0, 0]      # list of bytes received
+        }
+
+        NOTE: Requires U3 hardware version 1.21 or greater.  The keyword
+              argument InvertCS requires U3 firmware version 1.51 or greater.
+              In old versions of LabJackPython, the keyword argument CSPinNum
+              was named CSPINNum and the return value was a list of bytes
+              received instead of the Dictionary above.
         """
         if not isinstance(SPIBytes, list):
             raise LabJackException("SPIBytes MUST be a list of bytes")
@@ -1249,7 +1257,9 @@ class U3(Device):
             command[6] |= (1 << 7)
         if DisableDirConfig:
             command[6] |= (1 << 6)
-        
+        if InvertCS:
+            command[6] |= (1 << 5)
+
         spiModes = ('A', 'B', 'C', 'D')
         try:
             modeIndex = spiModes.index(SPIMode)
